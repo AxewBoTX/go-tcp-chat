@@ -42,7 +42,7 @@ func recieveData(conn net.Conn) {
 		read_buff := make([]byte, 2048)
 		if _, read_err := conn.Read(read_buff); read_err != nil {
 			color.Set(color.FgRed)
-			log.Println("Server Recieve Error:", read_err)
+			log.Fatal("Server Recieve Error:", read_err)
 			color.Unset()
 			return
 		}
