@@ -1,51 +1,16 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
-	"log"
-	"net"
-	"os"
-
-	"github.com/fatih/color"
-
 	"client/lib"
 )
 
 func main() {
-	conn, conn_err := net.Dial("tcp", lib.SERVER_ADDR)
-	if conn_err != nil {
-		color.Set(color.FgRed)
-		log.Fatal("TCP Connection Error:", conn_err)
-		color.Unset()
-	}
+	client := lib.NewClient()
 
-	go recieveData(conn)
-
-	user_input_scanner := bufio.NewScanner(os.Stdin)
-	for user_input_scanner.Scan() {
-		if _, send_err := conn.Write([]byte(user_input_scanner.Text() + "\n")); send_err != nil {
-			color.Set(color.FgRed)
-			log.Println("User Input Read Error:", send_err)
-			color.Unset()
-			return
-		}
-	}
+	client.ReadLoop()
+	client.WriteLoop()
 
 	defer func() {
-		conn.Close()
+		client.Conn.Close()
 	}()
-}
-
-func recieveData(conn net.Conn) {
-	for {
-		read_buff := make([]byte, 2048)
-		if _, read_err := conn.Read(read_buff); read_err != nil {
-			color.Set(color.FgRed)
-			log.Fatal("Server Recieve Error:", read_err)
-			color.Unset()
-			return
-		}
-		fmt.Printf("-> %s\n", read_buff)
-	}
 }
