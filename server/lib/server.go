@@ -22,7 +22,7 @@ func NewServer() *Server {
 }
 
 func (server *Server) Start() {
-	color.Set(color.FgGreen)
+	color.Set(color.FgHiCyan)
 	log.Println("Server running on", "http://"+SERVER_ADDR)
 	color.Unset()
 
@@ -32,6 +32,8 @@ func (server *Server) Start() {
 		log.Println("Server closing on", "https://"+SERVER_ADDR)
 		color.Unset()
 	}()
+
+	go server.ManageConnections()
 
 	for {
 		conn, conn_err := server.listener.Accept()
