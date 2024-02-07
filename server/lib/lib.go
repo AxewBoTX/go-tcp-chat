@@ -10,8 +10,8 @@ const ( // Constants
 
 type ( // Objects
 	Client struct {
-		Conn     net.Conn
-		Username string `json:"username"`
+		Conn     net.Conn `json:"-"`
+		Username string   `json:"username"`
 	}
 	Message struct {
 		Client Client `json:"client"`
