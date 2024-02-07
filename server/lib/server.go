@@ -1,8 +1,11 @@
 package lib
 
 import (
+	"bufio"
+	"fmt"
 	"log"
 	"net"
+	"strings"
 
 	"github.com/fatih/color"
 )
@@ -46,6 +49,44 @@ func (server *Server) Start() {
 		go server.HandleConnection(conn)
 	}
 }
+
+// Handle individual connections
+func (server *Server) HandleConnection(conn net.Conn) {
+	client_addr := conn.RemoteAddr().String()
+
+	// Get Username
+	if _, conn_write_err := conn.Write([]byte("Enter your username:")); conn_write_err != nil {
+		log.Println("Conn Write Error:", conn_write_err)
+	}
+	username, username_read_err := bufio.NewReader(conn).ReadString('\n')
+	if username_read_err != nil {
+		fmt.Fprintln(conn, "Username Read Error:", username_read_err)
+		conn.Close()
+	}
+	username = strings.TrimRight(strings.TrimSpace(username), "\n")
+	if username == "" || len(username) == 0 {
+		fmt.Fprintln(conn, "Error: Username is required")
+	}
+
+	// Create Client
+	client := *NewClient(conn, username)
+	Clients[client_addr] = client
+	JOIN_Messages <- *NewMessage(client, "JOIN", "")
+
+	// Read Loop
+	go func() {
+		client_scanner := bufio.NewScanner(conn)
+		for client_scanner.Scan() {
+			Messages <- *NewMessage(client, "MSG", client_scanner.Text())
+		}
+		defer func() {
+			LEAVE_Messages <- *NewMessage(client, "LEAVE", "")
+			delete(Clients, client_addr)
+			conn.Close()
+		}()
+	}()
+}
+
 func (server *Server) ManageConnections() {
 	for {
 		select {
