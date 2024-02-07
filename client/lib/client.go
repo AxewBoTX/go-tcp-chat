@@ -10,12 +10,6 @@ import (
 	"github.com/fatih/color"
 )
 
-type (
-	Client struct {
-		Conn net.Conn
-	}
-)
-
 func NewClient() *Client {
 	conn, conn_err := net.Dial("tcp", SERVER_ADDR)
 	if conn_err != nil {
