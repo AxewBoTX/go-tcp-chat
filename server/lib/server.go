@@ -42,7 +42,7 @@ func (server *Server) Start() {
 		conn, conn_err := server.listener.Accept()
 		if conn_err != nil {
 			color.Set(color.FgRed)
-			log.Println("Conneciton Accetp Error:", conn_err)
+			log.Println("Connection Accept Error:", conn_err)
 			color.Unset()
 		}
 
