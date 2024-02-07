@@ -2,6 +2,7 @@ package lib
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -55,18 +56,18 @@ func (server *Server) HandleConnection(conn net.Conn) {
 	client_addr := conn.RemoteAddr().String()
 
 	// Get Username
-	if _, conn_write_err := conn.Write([]byte("Enter your username:")); conn_write_err != nil {
-		log.Println("Conn Write Error:", conn_write_err)
-	}
-	username, username_read_err := bufio.NewReader(conn).ReadString('\n')
-	if username_read_err != nil {
-		fmt.Fprintln(conn, "Username Read Error:", username_read_err)
+	username_json, username_json_read_err := bufio.NewReader(conn).ReadString('\n')
+	if username_json_read_err != nil {
+		fmt.Fprintln(conn, "Username JSON Read Error:", username_json_read_err)
 		conn.Close()
 	}
-	username = strings.TrimRight(strings.TrimSpace(username), "\n")
-	if username == "" || len(username) == 0 {
-		fmt.Fprintln(conn, "Error: Username is required")
+	var username_msg Message
+	if username_msg_decode_err := json.Unmarshal([]byte(username_json), &username_msg); username_msg_decode_err != nil {
+		color.Set(color.FgRed)
+		log.Println("JOIN Message Decode Error:", username_msg_decode_err)
+		color.Unset()
 	}
+	username := strings.TrimSpace(username_msg.Client.Username)
 
 	// Create Client
 	client := *NewClient(conn, username)
@@ -77,7 +78,14 @@ func (server *Server) HandleConnection(conn net.Conn) {
 	go func() {
 		client_scanner := bufio.NewScanner(conn)
 		for client_scanner.Scan() {
-			Messages <- *NewMessage(client, "MSG", client_scanner.Text())
+			var client_msg Message
+			if client_msg_decode_err := json.Unmarshal([]byte(client_scanner.Text()), &client_msg); client_msg_decode_err != nil {
+				color.Set(color.FgRed)
+				log.Println("Client Message Decode Error:", client_msg_decode_err)
+				color.Unset()
+			}
+			client_msg.Client.Conn = client.Conn
+			Messages <- client_msg
 		}
 		defer func() {
 			LEAVE_Messages <- *NewMessage(client, "LEAVE", "")
