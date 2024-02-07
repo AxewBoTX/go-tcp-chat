@@ -2,6 +2,7 @@ package lib
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -37,12 +38,13 @@ func (client *Client) ReadLoop() {
 
 func (client *Client) WriteLoop() {
 	user_input_scanner := bufio.NewScanner(os.Stdin)
+	encoder := json.NewEncoder(client.Conn)
 	for user_input_scanner.Scan() {
-		if _, send_err := client.Conn.Write([]byte(user_input_scanner.Text() + "\n")); send_err != nil {
+		msg := Message{Client: *client, Method: "MSG", Body: user_input_scanner.Text()}
+		if user_msg_encode_err := encoder.Encode(msg); user_msg_encode_err != nil {
 			color.Set(color.FgRed)
-			log.Println("User Input Read Error:", send_err)
+			log.Println(user_msg_encode_err)
 			color.Unset()
-			return
 		}
 	}
 }
