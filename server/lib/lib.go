@@ -1,12 +1,7 @@
 package lib
 
 import (
-	"bufio"
-	"fmt"
-	"log"
 	"net"
-
-	"github.com/fatih/color"
 )
 
 const ( // Constants
@@ -15,11 +10,13 @@ const ( // Constants
 
 type ( // Objects
 	Client struct {
-		Conn net.Conn `json:"conn"`
+		Conn     net.Conn
+		Username string `json:"username"`
 	}
 	Message struct {
-		Client_ADDR string `json:"client_addr"`
-		Body        string `json:"body"`
+		Client Client `json:"client"`
+		Method string `json:"method"`
+		Body   string `json:"body"`
 	}
 )
 
