@@ -22,6 +22,14 @@ func NewClient() *Client {
 }
 
 func (client *Client) ReadLoop() {
+	// Client JOIN Message
+	join_msg_encoder := json.NewEncoder(client.Conn)
+	join_msg := Message{Client: *client, Method: "JOIN"}
+	if join_msg_encoder_err := join_msg_encoder.Encode(join_msg); join_msg_encoder_err != nil {
+		color.Set(color.FgRed)
+		log.Fatal("JOIN Message Encoder Error:", join_msg_encoder_err)
+		color.Unset()
+	}
 	go func() { // Running in a goroutine
 		for {
 			read_buff := make([]byte, 2048)
