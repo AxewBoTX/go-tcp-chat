@@ -3,7 +3,6 @@ package lib
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -32,14 +31,14 @@ func (client *Client) ReadLoop() {
 	}
 	go func() { // Running in a goroutine
 		for {
-			read_buff := make([]byte, 2048)
-			if _, read_err := client.Conn.Read(read_buff); read_err != nil {
+			var server_msg Message
+			server_msg_decoder := json.NewDecoder(client.Conn)
+			if server_msg_decode_err := server_msg_decoder.Decode(&server_msg); server_msg_decode_err != nil {
 				color.Set(color.FgRed)
-				log.Fatal("Server Recieve Error:", read_err)
+				log.Fatal("Server Message Decode Error:", server_msg_decode_err)
 				color.Unset()
-				return
 			}
-			fmt.Printf("-> %s\n", read_buff)
+			PrintMSG(server_msg)
 		}
 	}()
 }
