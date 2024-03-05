@@ -2,10 +2,11 @@ package lib
 
 import (
 	"encoding/json"
-	"log"
 	"net"
+	"os"
 
-	"github.com/fatih/color"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 )
 
 const ( // Constants
@@ -45,9 +46,7 @@ func BroadcastMessage(msg Message) {
 		if client.Conn.RemoteAddr().String() != msg.Client.Conn.RemoteAddr().String() {
 			msg_broadcast_encoder := json.NewEncoder(client.Conn)
 			if message_broadcast_err := msg_broadcast_encoder.Encode(msg); message_broadcast_err != nil {
-				color.Set(color.FgRed)
-				log.Println("Message Broadcast Error:", message_broadcast_err)
-				color.Unset()
+				log.Error("Failed To Broadcast Message", "Error", message_broadcast_err)
 			}
 		}
 	}
@@ -70,14 +69,40 @@ func GenerateMsgBody(msg Message) string {
 // logging message to the server
 func LogMsg(msg Message) {
 	if msg.Method == "JOIN" {
-		color.Set(color.FgGreen)
-		log.Println(msg.Client.Username + " joined the server!")
-		color.Unset()
+		styles := log.DefaultStyles()
+		styles.Levels[log.InfoLevel] = lipgloss.NewStyle().
+			SetString("JOIN").
+			Padding(0, 1, 0, 1).
+			Background(lipgloss.Color("#a6e3a1")).
+			Foreground(lipgloss.Color("0"))
+		logger := log.NewWithOptions(os.Stdout, log.Options{
+			ReportTimestamp: true,
+		})
+		logger.SetStyles(styles)
+		logger.Info(msg.Client.Username + " joined the server!")
 	} else if msg.Method == "MSG" {
-		log.Println(msg.Client.Username + ": " + msg.Body)
+		styles := log.DefaultStyles()
+		styles.Levels[log.InfoLevel] = lipgloss.NewStyle().
+			SetString("MSG").
+			Padding(0, 1, 0, 1).
+			Background(lipgloss.Color("#74c7ec")).
+			Foreground(lipgloss.Color("0"))
+		logger := log.NewWithOptions(os.Stdout, log.Options{
+			ReportTimestamp: true,
+		})
+		logger.SetStyles(styles)
+		logger.Info("", "username", msg.Client.Username, "body", msg.Body)
 	} else if msg.Method == "LEAVE" {
-		color.Set(color.FgYellow)
-		log.Println(msg.Client.Username + " left the server!")
-		color.Unset()
+		styles := log.DefaultStyles()
+		styles.Levels[log.InfoLevel] = lipgloss.NewStyle().
+			SetString("LEAVE").
+			Padding(0, 1, 0, 1).
+			Background(lipgloss.Color("#f9e2af")).
+			Foreground(lipgloss.Color("0"))
+		logger := log.NewWithOptions(os.Stdout, log.Options{
+			ReportTimestamp: true,
+		})
+		logger.SetStyles(styles)
+		logger.Info(msg.Client.Username + " left the server!")
 	}
 }

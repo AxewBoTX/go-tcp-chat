@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net"
+	"os"
 	"strings"
 
-	"github.com/fatih/color"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 )
 
 type Server struct {
@@ -18,23 +19,24 @@ type Server struct {
 func NewServer() *Server {
 	listener, listener_err := net.Listen("tcp", SERVER_ADDR)
 	if listener_err != nil {
-		color.Set(color.FgRed)
-		log.Println("Server Listener Error:", listener_err)
-		color.Unset()
+		log.Fatal("Failed To Start Server", "Error", listener_err)
 	}
 	return &Server{listener: listener}
 }
 
 func (server *Server) Start() {
-	color.Set(color.FgHiCyan)
-	log.Println("Server running on", "http://"+SERVER_ADDR)
-	color.Unset()
+	log.Info("Server running", "URL", "http://"+SERVER_ADDR)
 
 	defer func() {
 		server.listener.Close()
-		color.Set(color.FgYellow)
-		log.Println("Server closing on", "https://"+SERVER_ADDR)
-		color.Unset()
+		styles := log.DefaultStyles()
+		styles.Levels[log.InfoLevel] = lipgloss.NewStyle().
+			Padding(0, 1, 0, 1).
+			Background(lipgloss.Color("#f9e2af")).
+			Foreground(lipgloss.Color("0"))
+		logger := log.New(os.Stdout)
+		logger.SetStyles(styles)
+		logger.Info("Server closing on", "https://"+SERVER_ADDR)
 	}()
 
 	go server.ManageConnections()
@@ -42,9 +44,7 @@ func (server *Server) Start() {
 	for {
 		conn, conn_err := server.listener.Accept()
 		if conn_err != nil {
-			color.Set(color.FgRed)
-			log.Println("Connection Accept Error:", conn_err)
-			color.Unset()
+			log.Fatal("Failed To Accept Connection", "Error", conn_err)
 		}
 
 		go server.HandleConnection(conn)
@@ -63,9 +63,7 @@ func (server *Server) HandleConnection(conn net.Conn) {
 	}
 	var username_msg Message
 	if username_msg_decode_err := json.Unmarshal([]byte(username_json), &username_msg); username_msg_decode_err != nil {
-		color.Set(color.FgRed)
-		log.Println("JOIN Message Decode Error:", username_msg_decode_err)
-		color.Unset()
+		log.Error("Failed To Decode JOIN Message", "Error", username_msg_decode_err)
 	}
 	username := strings.TrimSpace(username_msg.Client.Username)
 
@@ -80,9 +78,7 @@ func (server *Server) HandleConnection(conn net.Conn) {
 		for client_scanner.Scan() {
 			var client_msg Message
 			if client_msg_decode_err := json.Unmarshal([]byte(client_scanner.Text()), &client_msg); client_msg_decode_err != nil {
-				color.Set(color.FgRed)
-				log.Println("Client Message Decode Error:", client_msg_decode_err)
-				color.Unset()
+				log.Error("Failed To Decode Client Message", "Error", client_msg_decode_err)
 			}
 			client_msg.Client.Conn = client.Conn
 			Messages <- client_msg
